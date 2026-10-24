@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/admin-guard";
 
 type SeedVariant = { group: string; option: string; price: number; stock: number };
 type SeedProduct = {
@@ -107,6 +108,9 @@ const SEED: SeedProduct[] = [
 
 // GET /api/seed-store — creates the mock products/variants (idempotent by name).
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   let created = 0;
   let skipped = 0;
 
@@ -145,6 +149,9 @@ export async function GET() {
 
 // DELETE /api/seed-store — wipes ONLY the seeded mock products (by name match).
 export async function DELETE() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const names = SEED.map((p) => p.name);
   const result = await prisma.product.deleteMany({ where: { name: { in: names } } });
   return NextResponse.json({ ok: true, deleted: result.count });

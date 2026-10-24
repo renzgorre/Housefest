@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isAdminRequest, requireAdmin } from "@/lib/admin-guard";
 
 // GET /api/products?includeInactive=1
 export async function GET(req: NextRequest) {
-  const includeInactive = req.nextUrl.searchParams.get("includeInactive") === "1";
+  const includeInactive =
+    req.nextUrl.searchParams.get("includeInactive") === "1" && (await isAdminRequest());
   const products = await prisma.product.findMany({
     where: includeInactive ? {} : { active: true },
     orderBy: { createdAt: "asc" },
@@ -14,6 +16,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/products — create a product
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const { name, description, imageUrl, imageUrls, sizeChartUrl, category, basePrice, active } = await req.json();
   if (!name?.trim()) return NextResponse.json({ error: "name required" }, { status: 400 });
 

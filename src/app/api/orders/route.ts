@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/admin-guard";
 
 type IncomingItem = {
   productId?: number | null;
@@ -12,6 +13,9 @@ type IncomingItem = {
 
 // GET /api/orders?status=&search=&from=&to=
 export async function GET(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const status = req.nextUrl.searchParams.get("status");
   const search = req.nextUrl.searchParams.get("search")?.trim();
   const from = req.nextUrl.searchParams.get("from");
@@ -51,6 +55,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/orders — create an order (manual sale from admin, or online later)
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const body = await req.json();
   const {
     customerName,

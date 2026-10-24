@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { pusherServer } from "@/lib/pusher";
 import { computeStandings } from "@/lib/standings";
+import { requireAdmin } from "@/lib/admin-guard";
 
 // PATCH /api/games/:id — rename / toggle active / update venue / update time
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const { id } = await params;
   const body = await req.json();
 
@@ -38,6 +42,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 // DELETE /api/games/:id — remove game and all its scores
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const { id } = await params;
   await prisma.score.deleteMany({ where: { gameId: Number(id) } });
   await prisma.game.delete({ where: { id: Number(id) } });

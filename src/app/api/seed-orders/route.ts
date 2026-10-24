@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/admin-guard";
 
 // GET /api/seed-orders?count=60 — inserts fake orders spanning the last 30 days.
 // Uses whatever products/variants exist in the DB. If none, falls back to snapshot names.
@@ -72,6 +73,9 @@ function pickCreatedAt(daysBack: number) {
 }
 
 export async function GET(req: Request) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const url = new URL(req.url);
   const requested = Math.min(Math.max(Number(url.searchParams.get("count") ?? 60), 1), 300);
   const force = url.searchParams.get("force") === "1";
@@ -179,6 +183,9 @@ export async function GET(req: Request) {
 
 // DELETE /api/seed-orders — wipes ALL orders (careful!)
 export async function DELETE() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const result = await prisma.order.deleteMany({});
   return NextResponse.json({ ok: true, deleted: result.count });
 }

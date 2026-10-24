@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/admin-guard";
 
 // GET /api/orders/analytics — KPI + chart data for the Store Overview page.
 // Excludes cancelled orders from all totals.
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const orders = await prisma.order.findMany({
     where: { status: { not: "cancelled" } },
     include: { items: true },

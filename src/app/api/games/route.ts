@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { pusherServer } from "@/lib/pusher";
 import { computeStandings } from "@/lib/standings";
+import { requireAdmin } from "@/lib/admin-guard";
 
 // GET /api/games
 export async function GET() {
@@ -11,6 +12,9 @@ export async function GET() {
 
 // POST /api/games — create a game
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const { name, description, venue, startTime } = await req.json();
   if (!name?.trim()) return NextResponse.json({ error: "name required" }, { status: 400 });
 
